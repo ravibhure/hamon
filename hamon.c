@@ -228,6 +228,9 @@ main(int argc, char **argv)
 	if (hflag == 1)
 		help();
 
+	if (cvalue == NULL)
+		help();
+
 	open_socket(svalue, &socket_fd, &socket);
 	
 	if (strcmp(cvalue, "show health") == 0)
