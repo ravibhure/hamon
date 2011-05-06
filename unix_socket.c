@@ -34,7 +34,7 @@ open_usocket(char * path, int * socket_fd, struct sockaddr_un * usocket)
 char *
 talk_usocket(int socket_fd, char * buffer, char * str)
 {
-        extern int errno;
+        //extern int errno;
         char * lstr;
         int len;
 

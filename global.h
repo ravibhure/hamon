@@ -23,6 +23,13 @@
         strncpy(dest, str, len - 1);                            \
         *(dest + len) = '\0';
 
+/*
+ * Function declaration
+ */
+// UNIX socket
 int open_usocket(char *, int *, struct sockaddr_un *);
 char * talk_usocket(int, char *, char *);
+// NETWORK socket
+int create_nsocket(void);
+void *get_in_addr(struct sockaddr *);
 

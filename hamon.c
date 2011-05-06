@@ -6,15 +6,21 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <sys/types.h>
+//#include <sys/socket.h>
+#include <arpa/inet.h>
+
+
 #include <errno.h>
 
 #include "global.h"
 
 #define STAT_TOKEN	","
 
-#define AVAILABLE_ARGUMENTS     "c:f:hs:"
+#define AVAILABLE_ARGUMENTS     "c:df:hs:"
 /*
  * c: command to send
+ * d: deamonize (enable network socket)
  * f: path to configuration file
  * h
  * s: path to haproxy stats socket
@@ -97,13 +103,20 @@ main(int argc, char **argv)
 {
 	/* arguments */
 	/* Don't forget to update AVAILABLE_ARGUMENTS when adding lines below */
-	int cflag = 0, fflag = 0, sflag = 0, hflag = 0;
+	int cflag = 0, dflag = 0, fflag = 0, sflag = 0, hflag = 0;
 	char *cvalue = NULL, *fvalue = NULL, *svalue = NULL;
 
-	/* Socket */
+	/* UNIX Socket */
 	struct sockaddr_un socket;
 	int  socket_fd;
 	char buffer[BUFFER_SIZE];
+
+	/* NETWORK Socket */
+	int net_socket_fd, new_fd;;
+	socklen_t sin_size;
+	struct sockaddr_storage their_addr; // connector's address information
+	char s[INET6_ADDRSTRLEN];
+
 
 	/* Other variables */
 	int c;
@@ -119,6 +132,9 @@ main(int argc, char **argv)
 			case 'c':
 				cflag = 1;
 				cvalue = optarg;
+				break;
+			case 'd':
+				dflag = 1;
 				break;
 			case 'f':
 				fflag = 1;
@@ -151,10 +167,37 @@ main(int argc, char **argv)
 	if (hflag == 1)
 		help();
 
-	if (cvalue == NULL)
+	if ((cvalue == NULL) && (dflag == 0))
 		help();
 
 	open_usocket(svalue, &socket_fd, &socket);
+
+	if (dflag == 1) {
+		net_socket_fd = create_nsocket();
+		while(1) {  // main accept() loop
+			sin_size = sizeof their_addr;
+			new_fd = accept(net_socket_fd, (struct sockaddr *)&their_addr, &sin_size);
+			if (new_fd == -1) {
+				perror("accept");
+				continue;
+			}
+
+			inet_ntop(their_addr.ss_family,
+				get_in_addr((struct sockaddr *)&their_addr),
+				s, sizeof s);
+			printf("server: got connection from %s\n", s);
+
+			if (!fork()) { // this is the child process
+				close(net_socket_fd); // child doesn't need the listener
+				if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
+					perror("send");
+				close(new_fd);
+				exit(0);
+			}
+		close(new_fd);  // parent doesn't need this
+		exit(0);
+		}
+	}
 	
 	if (strcmp(cvalue, "show health") == 0)
 		run_show_health(socket_fd, buffer);

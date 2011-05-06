@@ -17,14 +17,14 @@
 #define PORT "3490"  // the port users will be connecting to
 #define BACKLOG 10     // how many pending connections queue will hold
 
-void sigchld_handler(int s)
-{
+void 
+sigchld_handler(void) {
 	while(waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 // get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
+void *
+get_in_addr(struct sockaddr *sa) {
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
@@ -33,14 +33,12 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int 
-create_socket(void) {
-	int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
+create_nsocket(void) {
+	int sockfd;  // listen on sock_fd, new connection on new_fd
 	struct addrinfo hints, *servinfo, *p;
-	struct sockaddr_storage their_addr; // connector's address information
-	socklen_t sin_size;
 	struct sigaction sa;
 	int yes=1;
-	char s[INET6_ADDRSTRLEN];
+	//char s[INET6_ADDRSTRLEN];
 	int rv;
 
 	memset(&hints, 0, sizeof hints);
