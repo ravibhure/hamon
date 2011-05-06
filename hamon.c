@@ -8,34 +8,9 @@
 
 #include <errno.h>
 
-#define BUFFER_SIZE	4096
+#include "global.h"
+
 #define STAT_TOKEN	","
-
-/*
- * Allocate memory and manage errors
- */
-#define X_CALLOC(pt, nb_elements, element_size)                 \
-        pt = NULL;                                              \
-        if ((pt = calloc(element_size, nb_elements)) == NULL) { \
-                perror(NULL);                                   \
-                exit(EXIT_FAILURE);                             \
-        }
-
-/*
- * REAllocate memory and manage errors
- */
-#define X_REALLOC(pt, nb_elements, element_size)                 \
-        if ((pt = realloc(pt, nb_elements * element_size)) == NULL) { \
-                perror(NULL);                                   \
-                exit(EXIT_FAILURE);                             \
-        }
-
-/*
- * Copy string
- */
-#define X_STRNCPY(dest, str, len)				\
-	strncpy(dest, str, len - 1);				\
-	*(dest + len) = '\0';
 
 #define AVAILABLE_ARGUMENTS     "c:f:hs:"
 /*
@@ -59,65 +34,13 @@ help()
 	exit(0);
 }
 
-int
-open_socket(char * path, int * socket_fd, struct sockaddr_un * usocket)
-{
-	size_t length;
-
-	*socket_fd = 0;
-
-	*socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-	if ( *socket_fd < 0 ) {
-		printf("Unable to create socket\n");
-		exit(1);
-	}
-
-	usocket->sun_family = AF_UNIX;
-	
-	length = sizeof(usocket->sun_family) + strlen(path);
-	X_STRNCPY(usocket->sun_path, path, strlen(path) + 1);
-	if(connect(*socket_fd, (struct sockaddr *) usocket, length) != 0) {
-		printf("Unable to get connected to socket %s\n", path);
-		exit(1);
-	}
-
-	return 0;
-}
-
-char *
-talk_socket(int socket_fd, char * buffer, char * str)
-{
-	extern int errno;
-	char * lstr;
-	int len;
-
-	lstr = NULL;
-
-	len = strlen(str);
-	if (*(str + len - 1) != '\n') {
-		X_CALLOC(lstr, len + 1, sizeof(char));
-		X_STRNCPY(lstr, str, len + 1);
-		*(lstr + len) = '\n';
-		*(lstr + len + 1) = '\0';
-		write(socket_fd, lstr, len + 1);
-		len = read(socket_fd, buffer, BUFFER_SIZE);
-		free(lstr);
-	} else {
-		write(socket_fd, str, len);
-		len = read(socket_fd, buffer, BUFFER_SIZE);
-	}
-	buffer[len] = '\0';
-
-	return buffer;
-}
-
 void
 run_show_health(int socket_fd, char * buffer)
 {
 	char *line;
 	int l_offset;
 
-	talk_socket(socket_fd, buffer, "show stat");
+	talk_usocket(socket_fd, buffer, "show stat");
 
 	line = buffer;
 	l_offset = 0;
@@ -231,12 +154,12 @@ main(int argc, char **argv)
 	if (cvalue == NULL)
 		help();
 
-	open_socket(svalue, &socket_fd, &socket);
+	open_usocket(svalue, &socket_fd, &socket);
 	
 	if (strcmp(cvalue, "show health") == 0)
 		run_show_health(socket_fd, buffer);
 	else {
-		talk_socket(socket_fd, buffer, cvalue);
+		talk_usocket(socket_fd, buffer, cvalue);
 		printf("%s\n", buffer);
 	}
 

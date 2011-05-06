@@ -1,4 +1,5 @@
 CC=gcc
+RM=rm -f
 # -ansi -pedantic
 #
 #  #CFLAGS=-W -Wall -ggdb -pedantic -ansi -DDEBUG=yes
@@ -8,8 +9,18 @@ else
 CFLAGS=-W -Wall -ggdb -D DEBUG=yes
 endif
 
-hamon: hamon.c
-	$(CC) $(CFLAGS) hamon.c -o hamon
+build: hamon.o
+	$(CC) $(CFLAGS) -o hamon hamon.o network.o unix_socket.o
+
+hamon.o: network.o unix_socket.o
+	$(CC) $(CFLAGS) -c hamon.c -o hamon.o
+
+network.o: network.c
+	$(CC) $(CFLAGS) -c network.c -o network.o
+
+unix_socket.o: unix_socket.c
+	$(CC) $(CFLAGS) -c unix_socket.c -o unix_socket.o
 
 clean:
-	rm hamon
+	$(RM) hamon
+	$(RM) *.o
