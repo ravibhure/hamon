@@ -16,6 +16,7 @@
 #include "global.h"
 
 #define STAT_TOKEN	","
+#define OPT_ERR_MSG_ARG_MISS "Option -%c requires an argument.\n"
 
 #define AVAILABLE_ARGUMENTS     "c:df:hs:"
 /*
@@ -149,11 +150,14 @@ main(int argc, char **argv)
 				break;
 			case '?':
 				if (optopt == 'c')
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
+							optopt);
 				else if (optopt == 'f')
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
+							optopt);
 				else if (optopt == 's')
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
+							optopt);
 				else if (isprint (optopt))
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
 				else
@@ -170,13 +174,14 @@ main(int argc, char **argv)
 	if ((cvalue == NULL) && (dflag == 0))
 		help();
 
-	open_usocket(svalue, &socket_fd, &socket);
-
+	/* Daemon mode (imply network server */
 	if (dflag == 1) {
 		net_socket_fd = create_nsocket();
 		while(1) {  // main accept() loop
-			sin_size = sizeof their_addr;
-			new_fd = accept(net_socket_fd, (struct sockaddr *)&their_addr, &sin_size);
+			sin_size = sizeof(their_addr);
+			new_fd = accept(net_socket_fd, 
+					(struct sockaddr *)&their_addr, 
+					&sin_size);
 			if (new_fd == -1) {
 				perror("accept");
 				continue;
@@ -188,25 +193,39 @@ main(int argc, char **argv)
 			printf("server: got connection from %s\n", s);
 
 			if (!fork()) { // this is the child process
+				int len;
 				close(net_socket_fd); // child doesn't need the listener
-				if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
-					perror("send");
+				len = read(new_fd, buffer, 
+						BUFFER_SIZE - 1);
+				buffer[BUFFER_SIZE] = '\0';
+				printf("%s\n", buffer);
+				open_usocket(svalue, &socket_fd, &socket);
+				if (strcmp(buffer, "show health") == 0)
+					run_show_health(socket_fd, buffer);
+				else {
+					talk_usocket(socket_fd, buffer, buffer);
+					write(new_fd, buffer, strlen(buffer));
+				}
+				close(socket_fd);
+
 				close(new_fd);
 				exit(0);
 			}
-		close(new_fd);  // parent doesn't need this
-		exit(0);
+			close(new_fd);  // parent doesn't need this
 		}
+		close(net_socket_fd);
+		exit(0);
+	} else {
+		open_usocket(svalue, &socket_fd, &socket);
+		/* One shot question */
+		if (strcmp(cvalue, "show health") == 0)
+			run_show_health(socket_fd, buffer);
+		else {
+			talk_usocket(socket_fd, buffer, cvalue);
+			printf("%s\n", buffer);
+		}
+		close(socket_fd);
 	}
-	
-	if (strcmp(cvalue, "show health") == 0)
-		run_show_health(socket_fd, buffer);
-	else {
-		talk_usocket(socket_fd, buffer, cvalue);
-		printf("%s\n", buffer);
-	}
-
-	close(socket_fd);
 
 	return 0;
 }
