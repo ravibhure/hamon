@@ -1,3 +1,6 @@
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #define BUFFER_SIZE	4096
 
 #define X_CALLOC(pt, nb_elements, element_size)                 \
@@ -28,8 +31,10 @@
  */
 // UNIX socket
 int open_usocket(char *, int *, struct sockaddr_un *);
-char * talk_usocket(int, char *, char *);
+char *talk_usocket(int, char *, char *);
 // NETWORK socket
 int create_nsocket(void);
 void *get_in_addr(struct sockaddr *);
+// haproxy functions
+char *run_show_health(int, char *);
 

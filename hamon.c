@@ -41,63 +41,6 @@ help()
 	exit(0);
 }
 
-void
-run_show_health(int socket_fd, char * buffer)
-{
-	char *line;
-	int l_offset;
-
-	talk_usocket(socket_fd, buffer, "show stat");
-
-	line = buffer;
-	l_offset = 0;
-	do {
-		char *field;
-		int f_offset, num;
-
-		if (strlen(line) <= 2)
-			break;
-		
-		field = line;
-		f_offset = 0;
-		num = 0;
-		do {
-			int size;
-
-			if (num > 18)
-				break;
-
-			field = field + 1;
-			size = strchr(field, ',') - field;
-
-			switch (num) {
-				case 0:
-					printf("%-15.*s", size, field);
-					break;
-				case 1:
-					printf("%-20.*s", size, field);
-					break;
-				case 17:
-					printf("%-7.*s", size, field);
-					break;
-				case 18:
-					printf("%-3.*s", size, field);
-					break;
-			}
-
-			f_offset = field - line;
-			num++;
-
-			//BUGFIX: column shift in case of ,, (double comma)
-			if (size == 0)
-				num++;
-		} while ((field = strchr(line + f_offset + 1, ',')) != NULL);
-		printf("\n");
-
-		l_offset = line - buffer;
-	} while ((line = strchr(buffer + l_offset + 1, '\n')) != NULL);
-
-}
 
 int 
 main(int argc, char **argv)
@@ -200,12 +143,12 @@ main(int argc, char **argv)
 				buffer[BUFFER_SIZE] = '\0';
 				printf("%s\n", buffer);
 				open_usocket(svalue, &socket_fd, &socket);
-				if (strcmp(buffer, "show health") == 0)
+				if (strncmp(buffer, "show health", 11) == 0) {
 					run_show_health(socket_fd, buffer);
-				else {
+				} else {
 					talk_usocket(socket_fd, buffer, buffer);
-					write(new_fd, buffer, strlen(buffer));
 				}
+				write(new_fd, buffer, strlen(buffer));
 				close(socket_fd);
 
 				close(new_fd);
@@ -222,8 +165,8 @@ main(int argc, char **argv)
 			run_show_health(socket_fd, buffer);
 		else {
 			talk_usocket(socket_fd, buffer, cvalue);
-			printf("%s\n", buffer);
 		}
+		printf("%s\n", buffer);
 		close(socket_fd);
 	}
 
