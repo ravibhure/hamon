@@ -144,11 +144,14 @@ main(int argc, char **argv)
 					buffer[BUFFER_SIZE] = '\0';
 					printf("%s\n", buffer);
 					open_usocket(svalue, &socket_fd, &socket);
-					if (strncmp(buffer, "quit", 4) == 0)
+					if ((strncmp(buffer, "quit", 4) == 0) ||
+							(strncmp(buffer, "exit", 4) == 0))
 						break;
 
 					if (strncmp(buffer, "show health", 11) == 0) {
 						run_show_health(socket_fd, buffer);
+					} else if (strncmp(buffer, "help", 4) == 0) {
+						run_show_help(socket_fd, buffer);
 					} else {
 						talk_usocket(socket_fd, buffer, buffer);
 					}

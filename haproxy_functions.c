@@ -4,6 +4,15 @@
 #include "global.h"
 
 char *
+run_show_help(int socket_fd, char * buffer)
+{
+	talk_usocket(socket_fd, buffer, "show help");
+	strncat(buffer, "  show health    : prints status of frontend, backend and servers\n", 67);
+
+	return buffer;
+}
+
+char *
 run_show_health(int socket_fd, char * buffer)
 {
 	char *line;

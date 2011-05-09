@@ -37,4 +37,5 @@ int create_nsocket(void);
 void *get_in_addr(struct sockaddr *);
 // haproxy functions
 char *run_show_health(int, char *);
+char *run_show_help(int, char *);
 
