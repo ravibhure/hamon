@@ -138,17 +138,25 @@ main(int argc, char **argv)
 			if (!fork()) { // this is the child process
 				int len;
 				close(net_socket_fd); // child doesn't need the listener
-				len = read(new_fd, buffer, 
-						BUFFER_SIZE - 1);
-				buffer[BUFFER_SIZE] = '\0';
-				printf("%s\n", buffer);
-				open_usocket(svalue, &socket_fd, &socket);
-				if (strncmp(buffer, "show health", 11) == 0) {
-					run_show_health(socket_fd, buffer);
-				} else {
-					talk_usocket(socket_fd, buffer, buffer);
+				while (1) {
+					len = read(new_fd, buffer, 
+							BUFFER_SIZE - 1);
+					buffer[BUFFER_SIZE] = '\0';
+					printf("%s\n", buffer);
+					open_usocket(svalue, &socket_fd, &socket);
+					if (strncmp(buffer, "quit", 4) == 0)
+						break;
+
+					if (strncmp(buffer, "show health", 11) == 0) {
+						run_show_health(socket_fd, buffer);
+					} else {
+						talk_usocket(socket_fd, buffer, buffer);
+					}
+					write(new_fd, buffer, strlen(buffer));
+
+					memset(buffer, '\0', BUFFER_SIZE);
+					len = 0;
 				}
-				write(new_fd, buffer, strlen(buffer));
 				close(socket_fd);
 
 				close(new_fd);

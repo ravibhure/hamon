@@ -38,24 +38,24 @@ run_show_health(int socket_fd, char * buffer)
 
 			switch (num) {
 				case 0:
-					strncat(buffer, field, size + 1);
-					cursor += (size + 1);
-					buffer[cursor] = '\0';
+					snprintf((buffer + cursor), size + 2,
+							"%s ", field);
+					cursor += size + 1;
 					break;
 				case 1:
-					strcat(buffer, field);
+					snprintf((buffer + cursor), size + 1,
+							"%s ", field);
 					cursor += size;
-					buffer[cursor] = '\0';
 					break;
 				case 17:
-					strcat(buffer, field);
+					snprintf((buffer + cursor), size + 1,
+							"%s ", field);
 					cursor += size;
-					buffer[cursor] = '\0';
 					break;
 				case 18:
-					strcat(buffer, field);
+					snprintf((buffer + cursor), size + 1,
+							"%s ", field);
 					cursor += size;
-					buffer[cursor] = '\0';
 					break;
 			}
 
@@ -67,7 +67,9 @@ run_show_health(int socket_fd, char * buffer)
 				num++;
 
 		} while ((field = strchr(line + f_offset + 1, ',')) != NULL);
-		strcat(buffer, "\n");
+		snprintf((buffer + cursor), 2, "\n");
+		cursor++;
+		buffer[cursor] = '\0';
 
 		l_offset = line - buf;
 	} while ((line = strchr(buf + l_offset + 1, '\n')) != NULL);
