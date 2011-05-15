@@ -36,6 +36,8 @@ char *talk_usocket(int, char *, char *);
 int create_nsocket(void);
 void *get_in_addr(struct sockaddr *);
 // haproxy functions
+char *run_list_backend(int, char *);
+char *run_list_frontend(int, char *);
 char *run_show_health(int, char *);
 char *run_show_help(int, char *);
 

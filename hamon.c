@@ -152,6 +152,10 @@ main(int argc, char **argv)
 						run_show_health(socket_fd, buffer);
 					} else if (strncmp(buffer, "help", 4) == 0) {
 						run_show_help(socket_fd, buffer);
+					} else if (strncmp(buffer, "list frontend", 13) == 0) {
+						run_list_frontend(socket_fd, buffer);
+					} else if (strncmp(buffer, "list backend", 12) == 0) {
+						run_list_backend(socket_fd, buffer);
 					} else {
 						talk_usocket(socket_fd, buffer, buffer);
 					}
