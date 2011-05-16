@@ -40,4 +40,6 @@ char *run_list_backend(int, char *);
 char *run_list_frontend(int, char *);
 char *run_show_health(int, char *);
 char *run_show_help(int, char *);
+// output
+char *row_output(char *);
 

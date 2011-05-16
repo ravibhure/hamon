@@ -11,9 +11,9 @@ endif
 
 build: hamon.o
 	$(CC) $(CFLAGS) -o hamon hamon.o network.o unix_socket.o \
-		haproxy_functions.o
+		haproxy_functions.o output.o
 
-hamon.o: network.o unix_socket.o haproxy_functions.o
+hamon.o: network.o unix_socket.o haproxy_functions.o output.o
 	$(CC) $(CFLAGS) -c hamon.c -o hamon.o
 
 network.o: network.c
@@ -24,6 +24,9 @@ unix_socket.o: unix_socket.c
 
 haproxy_functions.o: haproxy_functions.c
 	$(CC) $(CFLAGS) -c haproxy_functions.c -o haproxy_functions.o
+
+output.o: output.c
+	$(CC) $(CFLAGS) -c output.c -o output.o
 
 clean:
 	$(RM) hamon

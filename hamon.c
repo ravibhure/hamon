@@ -18,12 +18,13 @@
 #define STAT_TOKEN	","
 #define OPT_ERR_MSG_ARG_MISS "Option -%c requires an argument.\n"
 
-#define AVAILABLE_ARGUMENTS     "c:df:hs:"
+#define AVAILABLE_ARGUMENTS     "c:df:ho:s:"
 /*
  * c: command to send
  * d: deamonize (enable network socket)
  * f: path to configuration file
  * h
+ * o: output format (row)
  * s: path to haproxy stats socket
  */
 
@@ -35,6 +36,7 @@ help()
 	fprintf(stderr, " [-c <command to pass to haproxy stats socket>]\n");
 	fprintf(stderr, " [-f <path to configuration file>]\n");
 	fprintf(stderr, " [-h]\n");
+	fprintf(stderr, " [-o <output format (default: row)>]\n");
 	fprintf(stderr, " [-s <path_to_haproxy stats socket>]\n");
 	fprintf(stderr, "command: any haproxy socket command\n");
 	fprintf(stderr, "   (more to come)\n");
@@ -47,8 +49,8 @@ main(int argc, char **argv)
 {
 	/* arguments */
 	/* Don't forget to update AVAILABLE_ARGUMENTS when adding lines below */
-	int cflag = 0, dflag = 0, fflag = 0, sflag = 0, hflag = 0;
-	char *cvalue = NULL, *fvalue = NULL, *svalue = NULL;
+	int cflag = 0, dflag = 0, fflag = 0, hflag = 0, oflag = 0, sflag = 0; 
+	char *cvalue = NULL, *fvalue = NULL, *ovalue = NULL, *svalue = NULL;
 
 	/* UNIX Socket */
 	struct sockaddr_un socket;
@@ -87,6 +89,10 @@ main(int argc, char **argv)
 			case 'h':
 				hflag = 1;
 				break;
+			case 'o':
+				oflag = 1;
+				ovalue = optarg;
+				break;
 			case 's':
 				sflag = 1;
 				svalue = optarg;
@@ -96,6 +102,9 @@ main(int argc, char **argv)
 					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
 							optopt);
 				else if (optopt == 'f')
+					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
+							optopt);
+				else if (optopt == 'o')
 					fprintf (stderr, OPT_ERR_MSG_ARG_MISS, 
 							optopt);
 				else if (optopt == 's')
@@ -158,6 +167,11 @@ main(int argc, char **argv)
 						run_list_backend(unix_socket, buffer);
 					} else {
 						talk_usocket(unix_socket, buffer, buffer);
+					}
+
+					if (oflag) {
+						if (strcmp(ovalue, "row") == 0)
+							row_output(buffer);
 					}
 					write(network_fd, buffer, strlen(buffer));
 

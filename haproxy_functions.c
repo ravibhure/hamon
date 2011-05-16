@@ -4,6 +4,12 @@
 
 #include "global.h"
 
+#define RESPONSE_UPDATE(p, pos, length, val)		\
+	snprintf((p + pos), length + 1, "%s ", val);	\
+	pos += length;					\
+	snprintf((p + pos), 2, ",");			\
+	pos += 1;
+
 char *
 run_show_help(int socket_fd, char * buffer)
 {
@@ -59,9 +65,10 @@ run_list_backend(int socket_fd, char * buffer)
 				case 1:
 					if ((strncmp(field, "BACKEND", 7))
 							== 0) {
-						snprintf((buffer + cursor), strlen(firstfield) + 1,
-							"%s ", firstfield);
-						cursor += strlen(firstfield);
+						RESPONSE_UPDATE(buffer, cursor, 
+							strlen(firstfield),
+							firstfield);
+
 						snprintf((buffer + cursor), 
 								2, "\n");
 						cursor++;
@@ -130,9 +137,10 @@ run_list_frontend(int socket_fd, char * buffer)
 				case 1:
 					if ((strncmp(field, "FRONTEND", 8))
 							== 0) {
-						snprintf((buffer + cursor), strlen(firstfield) + 1,
-							"%s ", firstfield);
-						cursor += strlen(firstfield);
+						RESPONSE_UPDATE(buffer, cursor, 
+							strlen(firstfield),
+							firstfield);
+
 						snprintf((buffer + cursor), 
 								2, "\n");
 						cursor++;
@@ -192,24 +200,11 @@ run_show_health(int socket_fd, char * buffer)
 
 			switch (num) {
 				case 0:
-					snprintf((buffer + cursor), size + 1,
-							"%s ", field);
-					cursor += size;
-					break;
 				case 1:
-					snprintf((buffer + cursor), size + 1,
-							"%s ", field);
-					cursor += size;
-					break;
 				case 17:
-					snprintf((buffer + cursor), size + 1,
-							"%s ", field);
-					cursor += size;
-					break;
 				case 18:
-					snprintf((buffer + cursor), size + 1,
-							"%s ", field);
-					cursor += size;
+					RESPONSE_UPDATE(buffer, cursor, size, 
+							field);
 					break;
 			}
 
