@@ -52,11 +52,11 @@ main(int argc, char **argv)
 
 	/* UNIX Socket */
 	struct sockaddr_un socket;
-	int  socket_fd;
+	int  unix_socket;
 	char buffer[BUFFER_SIZE];
 
 	/* NETWORK Socket */
-	int net_socket_fd, new_fd;;
+	int network_socket, network_fd;;
 	socklen_t sin_size;
 	struct sockaddr_storage their_addr; // connector's address information
 	char s[INET6_ADDRSTRLEN];
@@ -119,13 +119,13 @@ main(int argc, char **argv)
 
 	/* Daemon mode (imply network server */
 	if (dflag == 1) {
-		net_socket_fd = create_nsocket();
+		network_socket = create_nsocket();
 		while(1) {  // main accept() loop
 			sin_size = sizeof(their_addr);
-			new_fd = accept(net_socket_fd, 
+			network_fd = accept(network_socket, 
 					(struct sockaddr *)&their_addr, 
 					&sin_size);
-			if (new_fd == -1) {
+			if (network_fd == -1) {
 				perror("accept");
 				continue;
 			}
@@ -137,52 +137,52 @@ main(int argc, char **argv)
 
 			if (!fork()) { // this is the child process
 				int len;
-				close(net_socket_fd); // child doesn't need the listener
+				close(network_socket); // child doesn't need the listener
 				while (1) {
-					len = read(new_fd, buffer, 
+					len = read(network_fd, buffer, 
 							BUFFER_SIZE - 1);
 					buffer[BUFFER_SIZE] = '\0';
 					printf("%s\n", buffer);
-					open_usocket(svalue, &socket_fd, &socket);
+					open_usocket(svalue, &unix_socket, &socket);
 					if ((strncmp(buffer, "quit", 4) == 0) ||
 							(strncmp(buffer, "exit", 4) == 0))
 						break;
 
 					if (strncmp(buffer, "show health", 11) == 0) {
-						run_show_health(socket_fd, buffer);
+						run_show_health(unix_socket, buffer);
 					} else if (strncmp(buffer, "help", 4) == 0) {
-						run_show_help(socket_fd, buffer);
+						run_show_help(unix_socket, buffer);
 					} else if (strncmp(buffer, "list frontend", 13) == 0) {
-						run_list_frontend(socket_fd, buffer);
+						run_list_frontend(unix_socket, buffer);
 					} else if (strncmp(buffer, "list backend", 12) == 0) {
-						run_list_backend(socket_fd, buffer);
+						run_list_backend(unix_socket, buffer);
 					} else {
-						talk_usocket(socket_fd, buffer, buffer);
+						talk_usocket(unix_socket, buffer, buffer);
 					}
-					write(new_fd, buffer, strlen(buffer));
+					write(network_fd, buffer, strlen(buffer));
 
 					memset(buffer, '\0', BUFFER_SIZE);
 					len = 0;
 				}
-				close(socket_fd);
+				close(unix_socket);
 
-				close(new_fd);
+				close(network_fd);
 				exit(0);
 			}
-			close(new_fd);  // parent doesn't need this
+			close(network_fd);  // parent doesn't need this
 		}
-		close(net_socket_fd);
+		close(network_socket);
 		exit(0);
 	} else {
-		open_usocket(svalue, &socket_fd, &socket);
+		open_usocket(svalue, &unix_socket, &socket);
 		/* One shot question */
 		if (strcmp(cvalue, "show health") == 0)
-			run_show_health(socket_fd, buffer);
+			run_show_health(unix_socket, buffer);
 		else {
-			talk_usocket(socket_fd, buffer, cvalue);
+			talk_usocket(unix_socket, buffer, cvalue);
 		}
 		printf("%s\n", buffer);
-		close(socket_fd);
+		close(unix_socket);
 	}
 
 	return 0;
