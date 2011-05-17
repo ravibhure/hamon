@@ -23,7 +23,7 @@ open_usocket(char * path, int * socket_fd, struct sockaddr_un * usocket)
 
         length = sizeof(usocket->sun_family) + strlen(path);
         X_STRNCPY(usocket->sun_path, path, strlen(path) + 1);
-        if(connect(*socket_fd, (struct sockaddr *) usocket, length) != 0) {
+        if (connect(*socket_fd, (struct sockaddr *) usocket, length) != 0) {
                 printf("Unable to get connected to socket %s\n", path);
                 exit(1);
         }

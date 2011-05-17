@@ -4,6 +4,10 @@
 
 #include "global.h"
 
+#define LIST_UPDATE(p, pos, length, val)		\
+	snprintf((p + pos), length + 1, "%s ", val);	\
+	pos += length;
+
 #define RESPONSE_UPDATE(p, pos, length, val)		\
 	snprintf((p + pos), length + 1, "%s ", val);	\
 	pos += length;					\
@@ -65,7 +69,7 @@ run_list_backend(int socket_fd, char * buffer)
 				case 1:
 					if ((strncmp(field, "BACKEND", 7))
 							== 0) {
-						RESPONSE_UPDATE(buffer, cursor, 
+						LIST_UPDATE(buffer, cursor, 
 							strlen(firstfield),
 							firstfield);
 
@@ -137,7 +141,7 @@ run_list_frontend(int socket_fd, char * buffer)
 				case 1:
 					if ((strncmp(field, "FRONTEND", 8))
 							== 0) {
-						RESPONSE_UPDATE(buffer, cursor, 
+						LIST_UPDATE(buffer, cursor, 
 							strlen(firstfield),
 							firstfield);
 

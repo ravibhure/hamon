@@ -15,13 +15,11 @@ char *
 health_output(char *buffer) {
 	char c;
 	char buf[BUFFER_SIZE];
-	int i, j, size, field;
+	int i, j, size;
 
-	printf("%s\n", buffer);
 	memset(buf, '\0', BUFFER_SIZE);
 	size = 0;
 	i = 0;
-	field = 1;
 	
 	while ((c = buffer[i]) != '\0') {
 		if (c == ',') {
