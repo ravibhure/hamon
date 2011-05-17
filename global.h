@@ -42,4 +42,5 @@ char *run_show_health(int, char *);
 char *run_show_help(int, char *);
 // output
 char *row_output(char *);
+char *health_output(char *);
 
