@@ -26,12 +26,9 @@ health_output(char *buffer) {
 	while ((c = buffer[i]) != '\0') {
 		if (c == ',') {
 			int k = 0;
-			switch (field) {
-				case 1:
-					for ( k = size ; k < 12 ; k++ )
-						buf[j] = ' ', j++;
-				break;
-			}
+			if (buffer[i + 1] != '\n')
+				for ( k = size ; k < 12 ; k++ )
+					buf[j] = ' ', j++;
 			size = 0;
 			i++;
 		} else {
