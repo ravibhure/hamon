@@ -56,7 +56,7 @@ main(int argc, char **argv)
 	char buffer[BUFFER_SIZE];
 
 	/* NETWORK Socket */
-	int network_socket, network_fd;;
+	int daemon_socket, network_fd;;
 	socklen_t sin_size;
 	struct sockaddr_storage their_addr; // connector's address information
 	char s[INET6_ADDRSTRLEN];
@@ -122,10 +122,10 @@ main(int argc, char **argv)
 
 	/* Daemon mode (imply network server */
 	if (dflag == 1) {
-		network_socket = create_nsocket();
+		daemon_socket = create_nsocket();
 		while(1) {  // main accept() loop
 			sin_size = sizeof(their_addr);
-			network_fd = accept(network_socket, 
+			network_fd = accept(daemon_socket, 
 					(struct sockaddr *)&their_addr, 
 					&sin_size);
 			if (network_fd == -1) {
@@ -140,8 +140,9 @@ main(int argc, char **argv)
 
 			if (!fork()) { // this is the child process
 				int len;
-				close(network_socket); // child doesn't need the listener
+				close(daemon_socket); // child doesn't need the listener
 				while (1) {
+					memset(buffer, '\0', BUFFER_SIZE);
 					len = read(network_fd, buffer, 
 							BUFFER_SIZE - 1);
 					buffer[BUFFER_SIZE] = '\0';
@@ -173,15 +174,15 @@ main(int argc, char **argv)
 
 					memset(buffer, '\0', BUFFER_SIZE);
 					len = 0;
+					close(unix_socket);
 				}
-				close(unix_socket);
 
 				close(network_fd);
 				exit(0);
 			}
 			close(network_fd);  // parent doesn't need this
 		}
-		close(network_socket);
+		close(daemon_socket);
 		exit(0);
 	} else {
 		open_usocket(svalue, &unix_socket, &socket);

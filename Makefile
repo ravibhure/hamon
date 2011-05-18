@@ -31,3 +31,4 @@ output.o: output.c
 clean:
 	$(RM) hamon
 	$(RM) *.o
+	$(RM) debug.txt

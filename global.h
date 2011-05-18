@@ -1,7 +1,14 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+extern int errno;
+
 #define BUFFER_SIZE	4096
+
+#define MANAGE_ERROR(message, quit, exit_code)			\
+	printf("%s: %s\n", message, strerror(errno));		\
+	if (quit == 1)						\
+		exit(exit_code);
 
 #define X_CALLOC(pt, nb_elements, element_size)                 \
         pt = NULL;                                              \

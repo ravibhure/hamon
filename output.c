@@ -20,8 +20,11 @@ health_output(char *buffer) {
 	memset(buf, '\0', BUFFER_SIZE);
 	size = 0;
 	i = 0;
+	j = 0;
 	
-	while ((c = buffer[i]) != '\0') {
+	while ( (i < BUFFER_SIZE) 
+			&& (j < BUFFER_SIZE) 
+			&& (c = buffer[i]) != '\0') {
 		if (c == ',') {
 			int k = 0;
 			if (buffer[i + 1] != '\n')

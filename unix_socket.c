@@ -1,10 +1,14 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 #include "global.h"
+
+extern int errno;
 
 int
 open_usocket(char * path, int * socket_fd, struct sockaddr_un * usocket)
@@ -13,11 +17,8 @@ open_usocket(char * path, int * socket_fd, struct sockaddr_un * usocket)
 
         *socket_fd = 0;
 
-        *socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-        if ( *socket_fd < 0 ) {
-                printf("Unable to create socket\n");
-                exit(1);
-        }
+        if ((*socket_fd = socket(PF_UNIX, SOCK_STREAM, 1)) < 0)
+		MANAGE_ERROR("Could not open Unix Socket", 0, 0);
 
         usocket->sun_family = AF_UNIX;
 
@@ -38,6 +39,7 @@ talk_usocket(int socket_fd, char * buffer, char * str)
         char * lstr;
         int len;
 
+	memset(buffer, '\0', BUFFER_SIZE);
         lstr = NULL;
 
         len = strlen(str);
