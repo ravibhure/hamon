@@ -1,16 +1,16 @@
-#include <stdio.h>
-#include <string.h>
-
-#include <unistd.h>
-#include <stdlib.h>
-
 #include "global.h"
 
+/*
+ * row data format
+ */
 char * 
 row_output(char *buffer) {
 	return buffer;
 }
 
+/*
+ * column formatted for health output
+ */
 char *
 health_output(char *buffer) {
 	char c;

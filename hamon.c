@@ -128,9 +128,13 @@ main(int argc, char **argv)
 				// waiting for client requests
 				while (1) {
 					memset(buffer, '\0', BUFFER_SIZE);
+					len = 0;
+					
+					// wait for incoming data on the socket
 					len = read(child_socket, buffer, 
 							BUFFER_SIZE - 1);
 					buffer[BUFFER_SIZE] = '\0';
+
 					// Client wants to leave
 					if ((strncmp(buffer, "quit", 4) == 0) ||
 							(strncmp(buffer, "exit", 4) == 0))
@@ -143,8 +147,6 @@ main(int argc, char **argv)
 					write(child_socket, buffer, 
 							strlen(buffer));
 
-					memset(buffer, '\0', BUFFER_SIZE);
-					len = 0;
 				}
 
 				close(child_socket);
