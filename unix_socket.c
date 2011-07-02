@@ -39,7 +39,6 @@ talk_usocket(int socket_fd, char * buffer, char * str)
         char * lstr;
         int len;
 
-	memset(buffer, '\0', BUFFER_SIZE);
         lstr = NULL;
 
         len = strlen(str);
@@ -49,10 +48,12 @@ talk_usocket(int socket_fd, char * buffer, char * str)
                 *(lstr + len) = '\n';
                 *(lstr + len + 1) = '\0';
                 write(socket_fd, lstr, len + 1);
+		memset(buffer, '\0', BUFFER_SIZE);
                 len = read(socket_fd, buffer, BUFFER_SIZE);
                 free(lstr);
         } else {
                 write(socket_fd, str, len);
+		memset(buffer, '\0', BUFFER_SIZE);
                 len = read(socket_fd, buffer, BUFFER_SIZE);
         }
         buffer[len] = '\0';

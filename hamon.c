@@ -33,6 +33,7 @@ help()
 {
 	fprintf(stderr, "Usage: \n");
 	fprintf(stderr, " [-c <command to pass to haproxy stats socket>]\n");
+	fprintf(stderr, " [-d enable deamon mode (network listening)]\n");
 	fprintf(stderr, " [-f <path to configuration file>]\n");
 	fprintf(stderr, " [-h]\n");
 	fprintf(stderr, " [-s <path_to_haproxy stats socket>]\n");
@@ -146,7 +147,6 @@ main(int argc, char **argv)
 					len = read(network_fd, buffer, 
 							BUFFER_SIZE - 1);
 					buffer[BUFFER_SIZE] = '\0';
-					printf("%s\n", buffer);
 					open_usocket(svalue, &unix_socket, &socket);
 					if ((strncmp(buffer, "quit", 4) == 0) ||
 							(strncmp(buffer, "exit", 4) == 0))
@@ -168,6 +168,16 @@ main(int argc, char **argv)
 					} else {
 						talk_usocket(unix_socket, 
 								buffer, buffer);
+					}
+
+					if (strstr(buffer, "Unknown command") 
+							!= NULL) {
+						//FIXME: the below is dirty
+						close(unix_socket);
+						open_usocket(svalue, 
+							&unix_socket, &socket);
+						run_show_help(unix_socket, 
+								buffer);
 					}
 
 					write(network_fd, buffer, strlen(buffer));

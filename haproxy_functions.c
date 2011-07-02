@@ -17,6 +17,7 @@
 char *
 run_show_help(int socket_fd, char * buffer)
 {
+	memset(buffer, '\0', BUFFER_SIZE);
 	talk_usocket(socket_fd, buffer, "show help");
 	strncat(buffer, "  show health    : print status of frontend, backend and servers\n", 66);
 	strncat(buffer, "  list backend   : print the backend list\n", 43);
