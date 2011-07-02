@@ -1,16 +1,8 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-
-#include <sys/types.h>
-//#include <sys/socket.h>
 #include <arpa/inet.h>
-
-
 #include <errno.h>
 
 #include "global.h"
@@ -27,21 +19,9 @@
  * s: path to haproxy stats socket
  */
 
-/* Prints help */
-void
-help()
-{
-	fprintf(stderr, "Usage: \n");
-	fprintf(stderr, " [-c <command to pass to haproxy stats socket>]\n");
-	fprintf(stderr, " [-d enable deamon mode (network listening)]\n");
-	fprintf(stderr, " [-f <path to configuration file>]\n");
-	fprintf(stderr, " [-h]\n");
-	fprintf(stderr, " [-s <path_to_haproxy stats socket>]\n");
-	fprintf(stderr, "command: any haproxy socket command\n");
-	fprintf(stderr, "   (more to come)\n");
-	exit(0);
-}
-
+/* Function prototypes */
+static void help();
+static void manage_request(int, char *, char *, int);
 
 int 
 main(int argc, char **argv)
@@ -57,11 +37,10 @@ main(int argc, char **argv)
 	char buffer[BUFFER_SIZE];
 
 	/* NETWORK Socket */
-	int daemon_socket, network_fd;;
+	int daemon_socket, child_socket;;
 	socklen_t sin_size;
-	struct sockaddr_storage their_addr; // connector's address information
+	struct sockaddr_storage client_addr; // connector's address information
 	char s[INET6_ADDRSTRLEN];
-
 
 	/* Other variables */
 	int c;
@@ -112,7 +91,6 @@ main(int argc, char **argv)
 				help();
 			default:
 				help();
-				exit(1);
 		}
 
 	if (hflag == 1)
@@ -123,53 +101,50 @@ main(int argc, char **argv)
 
 	/* Daemon mode (imply network server */
 	if (dflag == 1) {
-		daemon_socket = create_nsocket();
+		daemon_socket = create_listen_socket();
 		while(1) {  // main accept() loop
-			sin_size = sizeof(their_addr);
-			network_fd = accept(daemon_socket, 
-					(struct sockaddr *)&their_addr, 
+			sin_size = sizeof(client_addr);
+
+			//FIXME: can be a function
+			// wait for a connection on the daemon socket
+			child_socket = accept(daemon_socket, 
+					(struct sockaddr *)&client_addr, 
 					&sin_size);
-			if (network_fd == -1) {
-				perror("accept");
+			
+			if (child_socket == -1) {
+				MANAGE_ERROR("accept", NO, 0);
 				continue;
 			}
 
-			inet_ntop(their_addr.ss_family,
-				get_in_addr((struct sockaddr *)&their_addr),
-				s, sizeof s);
+			// convert IP address from binary to text
+			inet_ntop(client_addr.ss_family,
+				get_in_addr((struct sockaddr *)&client_addr),
+				s, sizeof(s));
+			//FIXME: only print in debug mode
 			printf("server: got connection from %s\n", s);
 
-			if (!fork()) { // this is the child process
+			if (!fork()) {
+				// this is the child process
 				int len;
-				close(daemon_socket); // child doesn't need the listener
+				// child doesn't need the listener
+				close(daemon_socket); 
+
+				// waiting for client requests
 				while (1) {
 					memset(buffer, '\0', BUFFER_SIZE);
-					len = read(network_fd, buffer, 
+					len = read(child_socket, buffer, 
 							BUFFER_SIZE - 1);
 					buffer[BUFFER_SIZE] = '\0';
 					open_usocket(svalue, &unix_socket, &socket);
+					// Client wants to leave
 					if ((strncmp(buffer, "quit", 4) == 0) ||
 							(strncmp(buffer, "exit", 4) == 0))
 						break;
 
-					if (strncmp(buffer, "show health", 11) == 0) {
-						run_show_health(unix_socket, 
-								buffer);
-						health_output(buffer);
-					} else if (strncmp(buffer, "help", 4) == 0) {
-						run_show_help(unix_socket, 
-								buffer);
-					} else if (strncmp(buffer, "list frontend", 13) == 0) {
-						run_list_frontend(unix_socket, 
-								buffer);
-					} else if (strncmp(buffer, "list backend", 12) == 0) {
-						run_list_backend(unix_socket, 
-								buffer);
-					} else {
-						talk_usocket(unix_socket, 
-								buffer, buffer);
-					}
+					manage_request(unix_socket, buffer,
+							buffer, 1);
 
+					//FIXME: move this to manage_request
 					if (strstr(buffer, "Unknown command") 
 							!= NULL) {
 						//FIXME: the below is dirty
@@ -180,32 +155,77 @@ main(int argc, char **argv)
 								buffer);
 					}
 
-					write(network_fd, buffer, strlen(buffer));
+					// Send response to the client
+					write(child_socket, buffer, 
+							strlen(buffer));
 
 					memset(buffer, '\0', BUFFER_SIZE);
 					len = 0;
 					close(unix_socket);
 				}
 
-				close(network_fd);
-				exit(0);
+				close(child_socket);
+				exit(EXIT_SUCCESS);
 			}
-			close(network_fd);  // parent doesn't need this
+			// parent doesn't need this
+			close(child_socket);
 		}
 		close(daemon_socket);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	} else {
+		// One shot question
+		memset(buffer, '\0', BUFFER_SIZE);
+		X_STRNCPY(buffer, cvalue, strlen(cvalue));
+
 		open_usocket(svalue, &unix_socket, &socket);
-		/* One shot question */
-		if (strcmp(cvalue, "show health") == 0)
-			run_show_health(unix_socket, buffer);
-		else {
-			talk_usocket(unix_socket, buffer, cvalue);
-		}
+
+		manage_request(unix_socket, buffer, buffer, 1);
 		printf("%s\n", buffer);
+
 		close(unix_socket);
 	}
 
 	return 0;
+}
+
+/* Prints help */
+static void
+help()
+{
+	fprintf(stderr, "Usage: \n");
+	fprintf(stderr, " [-c <command to pass to haproxy stats socket>]\n");
+	fprintf(stderr, " [-d enable deamon mode (network listening)]\n");
+	fprintf(stderr, " [-f <path to configuration file>]\n");
+	fprintf(stderr, " [-h]\n");
+	fprintf(stderr, " [-s <path_to_haproxy stats socket>]\n");
+	fprintf(stderr, "command: any haproxy socket command\n");
+	fprintf(stderr, "   (more to come)\n");
+	exit(0);
+}
+
+/*
+ * Manage request
+ *
+ * output: output format
+ */
+//FIXME: should manage haproxy socket as well
+//FIXME: should overload haproxy error/help message
+static void
+manage_request(int haproxy_socket, char *request, char *buffer, int output)
+{
+	if (strncmp(request, "show health", 11) == 0) {
+		run_show_health(haproxy_socket, buffer);
+		if (output == 1)
+			health_output(buffer);
+	} else if (strncmp(request, "help", 4) == 0) {
+		run_show_help(haproxy_socket, buffer);
+	} else if (strncmp(request, "list frontend", 13) == 0) {
+		run_list_frontend(haproxy_socket, buffer);
+	} else if (strncmp(request, "list backend", 12) == 0) {
+		run_list_backend(haproxy_socket, buffer);
+	} else {
+		talk_usocket(haproxy_socket, buffer, buffer);
+	}
+
 }
 

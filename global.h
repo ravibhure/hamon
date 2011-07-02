@@ -3,12 +3,22 @@
 
 extern int errno;
 
+#define PORT "3490"	// the port users will be connecting to
+#define BACKLOG 10	// how many pending connections queue will hold
+
 #define BUFFER_SIZE	4096
 
-#define MANAGE_ERROR(message, quit, exit_code)			\
-	printf("%s: %s\n", message, strerror(errno));		\
-	if (quit == 1)						\
-		exit(exit_code);
+#define YES     0
+#define NO      1
+#define TRUE    0
+#define FALSE   1
+
+/* Macros */
+#define MANAGE_ERROR(message, quit, exit_code) {                \
+	printf("%s: %s\n", message, strerror(errno));           \
+	if (quit == TRUE)                                       \
+		exit(exit_code);                                \
+	}
 
 #define X_CALLOC(pt, nb_elements, element_size)                 \
         pt = NULL;                                              \
@@ -30,7 +40,7 @@ extern int errno;
  * Copy string
  */
 #define X_STRNCPY(dest, str, len)                               \
-        strncpy(dest, str, len - 1);                            \
+        strncpy(dest, str, len);                            \
         *(dest + len) = '\0';
 
 /*
@@ -40,7 +50,7 @@ extern int errno;
 int open_usocket(char *, int *, struct sockaddr_un *);
 char *talk_usocket(int, char *, char *);
 // NETWORK socket
-int create_nsocket(void);
+int create_listen_socket(void);
 void *get_in_addr(struct sockaddr *);
 // haproxy functions
 char *run_list_backend(int, char *);
